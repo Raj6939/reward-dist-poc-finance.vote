@@ -145,8 +145,8 @@ data:{
       newData:{       
         inputData: [
           {
-            destination: "0x7e8e1B5fcd51D5b65f162D20c0d60a1f4232c06C",
-            value: "220000000000000000000"
+            destination: "0x39613B3F3B4260287537AA25FD40aFe1BE371D98",
+            value: "100000000000000000000"
           }
         ],
         additionalData: {
@@ -154,12 +154,12 @@ data:{
           depositToken: "0x6cBAD888Bf20b35192AdfFA909c5cfeeD8463f81",
           project: {
             logo:{},           
-            label: "AIRDROP TEST FOR FYRE",
-            symbol: "ATFF",
+            label: "AIRDROP TEST FOR FYREXYZ",
+            symbol: "FYREXYZ",
             address: {
               5: "0x6cBAD888Bf20b35192AdfFA909c5cfeeD8463f81"
             },
-            key: "ATFF",            
+            key: "FYREXYZ",            
           },
           contract: "MerkleDropFactory",
           chainId: 5
@@ -206,16 +206,10 @@ data:{
           msg:requestData,
           sig
         })
-      )
-      // const reader = new FileReader();
-      // reader.readAsText(logo);      
-      formData.append('image',logo);
+      )  
+      formData.append('projectLogo', new Blob([logo], { type: 'image/png' }), 'logo.png')
       console.log('formData with logo',formData)  
-      const result = await axios.post('https://bank.influencebackend.xyz/create-merkle-tree/bank', formData,{
-        headers:{
-        'Content-Type': 'multipart/form-data'
-        }
-      })
+      const result = await axios.post('https://bank.influencebackend.xyz/create-merkle-tree/bank', formData)
       console.log(result)
       console.log(result.data)
       const { ipfsHash, root, totalBalance, dbTreeId } = result.data;
