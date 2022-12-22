@@ -35,12 +35,13 @@ export default {
   },
   data() {
     return { 
-        projectId:"639adf273d4f7700123c0df5",              
+        projectId:"63a332743d4f7700123c334e",              
         newRoot:"",       
         ipfsHash:"",
         walletAddress:"",
         tokenBalance:"",
         accounts:[],
+        depositToken:"0x6cBAD888Bf20b35192AdfFA909c5cfeeD8463f81"
     };
   },
   methods: {
