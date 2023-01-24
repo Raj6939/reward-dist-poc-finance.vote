@@ -10,6 +10,5 @@ module.exports = defineConfig({
       },
     },
   },
+  publicPath: process.env.NODE_ENV === "production" ? "/reward-dist-poc-finance.vote/" : "/"
 });
-
-module.exports = {  publicPath: process.env.NODE_ENV === "production" ? "/reward-dist-poc-finance.vote/" : "/",};
