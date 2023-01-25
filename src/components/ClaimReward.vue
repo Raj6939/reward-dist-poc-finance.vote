@@ -15,18 +15,21 @@
     </div>     
     <b-button class="mt-4" variant="info" @click="goTo"> Go to Admin side</b-button>
     <b-button class="mt-4 ml-4" variant="success" @click="onSubmit"
-      >Claim Reward</b-button
-    >
-    
+      >Claim Reward</b-button>
+    <b-button class="mt-4 ml-2" variant="danger" @click="connect"> connect</b-button>      
+    <b-button class="mt-4 ml-2" variant="danger" @click="disconnectMetamask"> Disconnect</b-button>    
   </div>
 </template>
 
 <script>
 import axios from 'axios'
+// import Web3 from 'web3'
 import  loadweb3  from "../contracts/getWeb3";
+import loadAndDisconnect from "../contracts/disconnecWeb3"
+
 import { abi, address } from "../contracts/merkelDropFactoryAbi";
 import {erc20ABI} from "../contracts/ERC20Contract"
-import {utils} from "web3"
+// import {utils} from "web3"
 // import {ipfsHashToBytes32} from "../utils/conversionFunctions"
 export default {
   name: "claim-reward",
@@ -47,38 +50,51 @@ export default {
     goTo() {
       this.$router.push('/')
     },
+    async connect() {
+      const web3 = await loadweb3();
+      console.log(web3)
+      this.accounts = await web3.eth.getAccounts();
+      console.log(this.accounts)
+    },
+   async disconnectMetamask(){
+      console.log('hi')
+       const web3 = await loadAndDisconnect();
+      console.log(web3)
+  
+    },
     async onSubmit() {  
-      let data =[]    
-      const res = await axios.get(`https://bank.influencebackend.xyz/bank/check/${this.walletAddress}`)
-      data = [...res.data]
-      const filteredObject = data.find((x)=>{
-        return x._id === this.projectId
-      })
-      console.log(filteredObject)
-      console.log(filteredObject.treeIndex)
-      console.log(filteredObject.additionalData.chainId)
-      console.log(filteredObject.inputData.hash)
-      console.log(filteredObject.version)
+      // let data =[]    
+      // const res = await axios.get(`https://bank.influencebackend.xyz/bank/check/${this.walletAddress}`)
+      // data = [...res.data]
+      // const filteredObject = data.find((x)=>{
+      //   return x._id === this.projectId
+      // })
+      // console.log(filteredObject)
+      // console.log(filteredObject.treeIndex)
+      // console.log(filteredObject.additionalData.chainId)
+      // console.log(filteredObject.inputData.hash)
+      // console.log(filteredObject.version)
       const web3 = await loadweb3();
       this.accounts = await web3.eth.getAccounts();
-      const contract = new web3.eth.Contract(abi, address);
-      const [tree, withdrawn] = await Promise.all([
-        contract.methods.merkleTrees(filteredObject.treeIndex-1).call(),
-        contract.methods.getWithdrawn(filteredObject.treeIndex, filteredObject.inputData.hash).call()
-      ])
-      console.log(JSON.stringify(tree))
-      console.log(tree, withdrawn)    
-      const getProofFromApi = await this.getProof(this.projectId,this.walletAddress)
-      console.log(getProofFromApi)
-      const amountInWei =  utils.toWei(filteredObject.inputData.data.value, 'wei').toString();
-      console.log(amountInWei)
-      const withDrawToken = await contract.methods.withdraw(
-        filteredObject.treeIndex-1,
-        this.walletAddress,
-        amountInWei,
-        getProofFromApi
-      ).send({from:this.accounts[0]})
-      console.log(withDrawToken)
+      console.log(this.accounts)
+      // const contract = new web3.eth.Contract(abi, address);
+      // const [tree, withdrawn] = await Promise.all([
+      //   contract.methods.merkleTrees(filteredObject.treeIndex-1).call(),
+      //   contract.methods.getWithdrawn(filteredObject.treeIndex, filteredObject.inputData.hash).call()
+      // ])
+      // console.log(JSON.stringify(tree))
+      // console.log(tree, withdrawn)    
+      // const getProofFromApi = await this.getProof(this.projectId,this.walletAddress)
+      // console.log(getProofFromApi)
+      // const amountInWei =  utils.toWei(filteredObject.inputData.data.value, 'wei').toString();
+      // console.log(amountInWei)
+      // const withDrawToken = await contract.methods.withdraw(
+      //   filteredObject.treeIndex-1,
+      //   this.walletAddress,
+      //   amountInWei,
+      //   getProofFromApi
+      // ).send({from:this.accounts[0]})
+      // console.log(withDrawToken)
     },
     async getProof(projectId,walletAddress) {
       const proof = await axios.get(`https://bank.influencebackend.xyz/proof/${projectId}/${walletAddress}`)
