@@ -27,26 +27,46 @@
       </div>
     </div>     
     <b-button class="mt-4" variant="info" @click="goTo"> Go to Admin side</b-button>
-    <b-button class="mt-4 ml-4" variant="success" @click="onSubmit"
-      >Claim Reward</b-button
+    <b-button class="mt-4 ml-4" variant="success" @click="selectWallet"
+      >Connect</b-button
     >
     <b-button class="mt-4 ml-4" variant="danger" @click="disconnectWallet"
       >Disconnect Wallet</b-button
     >
-    
+      <hf-pop-up
+  Header="Select Wallet">
+  <b-button class="mt-2 ml-5 mr-4" variant="success" @click="metamaskSelected"
+      >   <img
+                  src="../assets/metamask.svg"
+                  height="25px"
+                  width="25px"
+                />Metamask</b-button
+    >
+
+    <b-button class="mt-2 ml-5 mr-4" variant="info" @click="walletConnectSelected"
+      ><img src="../assets/walletConnnect.svg"
+        height="25px"
+        width="25px"
+    />WalletConnect</b-button
+    >
+  </hf-pop-up>
   </div>
 </template>
 
 <script>
 import axios from 'axios'
-import Web3 from "web3"
+// import Web3 from "web3"
 import  loadweb3  from "../contracts/getWeb3";
+import connectWalletConnect from "../contracts/handleWalletConnect"
 import { abi, address } from "../contracts/merkelDropFactoryAbi";
 import {erc20ABI} from "../contracts/ERC20Contract"
 import {utils} from "web3"
 import { provider } from "../contracts/provider"
+import toast from "../elements/toast"
 // import {ipfsHashToBytes32} from "../utils/conversionFunctions"
+import HfPopUp from "../elements/HfPopUp.vue"
 export default {
+  components:{HfPopUp},
   name: "claim-reward",
   props: {
     msg: String,
@@ -59,19 +79,42 @@ export default {
         walletAddress:"",
         tokenBalance:"",
         accounts:[],
-        depositToken:"0x6cBAD888Bf20b35192AdfFA909c5cfeeD8463f81"
+        depositToken:"0x6cBAD888Bf20b35192AdfFA909c5cfeeD8463f81",
+        isMetamaskSelected:false,
+        isWalletConnect:false
     };
   },
   methods: {
+    selectWallet(){
+       this.$root.$emit('modal-show');
+    },
+    async metamaskSelected() {
+      this.isMetamaskSelected = true
+      this.walletConnectSelected = false
+     await this.onSubmit()
+    },
+   async walletConnectSelected() {
+      this.walletConnectSelected = true
+      this.isMetamaskSelected = false
+      await this.onSubmit()
+    },
     goTo() {
       this.$router.push('/')
     },
     async disconnectWallet() {
-      console.log('dd')
-      await provider.disconnect();      
+      console.log('disconnect')
+      await provider.disconnect(); 
+      this.toast('wallet disconnected','success')     
     },
     async onSubmit() {
-      console.log(this.accounts);      
+      console.log(this.accounts);
+      this.$root.$emit('modal-close');
+      if(this.projectId===""){
+        return this.toast('Enter Airdrop ID','error')
+      }      
+      if(this.walletAddress==="") {
+        return this.toast('Enter Wallet Address','error')
+      }
       try{
       let data =[]    
       const res = await axios.get(`https://bank.influencebackend.xyz/bank/check/${this.walletAddress}`)
@@ -84,18 +127,33 @@ export default {
       console.log(filteredObject.additionalData.chainId)
       console.log(filteredObject.inputData.hash)
       console.log(filteredObject.version)
+      let web3;
+      console.log('MM',this.isMetamaskSelected)
+      console.log('WC',this.walletConnectSelected)
+      if(this.isMetamaskSelected === true && this.walletConnectSelected === false){
+        console.log('in MM')
+        web3 = await loadweb3(filteredObject.additionalData.chainId);
+      }else if(this.isMetamaskSelected === false && this.walletConnectSelected === true){
+        console.log('in WC')
+         web3 = await connectWalletConnect(filteredObject.additionalData.chainId)
+      }
       // const web3 = await loadweb3();
-      await provider.enable();
-      const web3 = new Web3(provider);
-      console.log(web3)
+      // await provider.enable();
+      // const web3 = new Web3(provider);
+      
+     
       this.accounts = await web3.eth.getAccounts();
+      console.log(this.accounts)
       const contract = new web3.eth.Contract(abi, address);
       const [tree, withdrawn] = await Promise.all([
         contract.methods.merkleTrees(filteredObject.treeIndex-1).call(),
         contract.methods.getWithdrawn(filteredObject.treeIndex, filteredObject.inputData.hash).call()
       ])
       console.log(JSON.stringify(tree))
-      console.log(tree, withdrawn)    
+      console.log(tree, withdrawn) 
+      if(withdrawn === false) {
+        return this.toast('reward already claimed','error')
+      }   
       const getProofFromApi = await this.getProof(this.projectId,this.walletAddress)
       console.log(getProofFromApi)
       const amountInWei =  utils.toWei(filteredObject.inputData.data.value, 'wei').toString();
@@ -107,8 +165,16 @@ export default {
         getProofFromApi
       ).send({from:this.accounts[0]})
       console.log(withDrawToken)
+      if(withDrawToken.status === true){
+        return this.toast( "Reward claimed successfully! check your wallet","success")
+      }
     }catch(e) {
       console.log(e)
+      // if(e === "User closed modal")
+      // {
+        // this.$router.go(0)
+      // }
+      // this.$router.go(0)
       // location.reload();
     // await provider.disconnect()
     //   provider.on("disconnect", (code, reason) => {
@@ -155,6 +221,7 @@ export default {
      }
    }
   },
+  mixins:[toast]
 };
 </script>
 
