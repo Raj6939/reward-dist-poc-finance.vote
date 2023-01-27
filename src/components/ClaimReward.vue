@@ -151,7 +151,7 @@ export default {
       ])
       console.log(JSON.stringify(tree))
       console.log(tree, withdrawn) 
-      if(withdrawn === false) {
+      if(withdrawn === true) {
         return this.toast('reward already claimed','error')
       }   
       const getProofFromApi = await this.getProof(this.projectId,this.walletAddress)
