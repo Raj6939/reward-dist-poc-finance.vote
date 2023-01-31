@@ -34,6 +34,7 @@
       >Disconnect Wallet</b-button
     >
       <hf-pop-up
+      id="modal-1"
   Header="Select Wallet">
   <b-button class="mt-2 ml-5 mr-4" variant="success" @click="metamaskSelected"
       >   <img
@@ -49,6 +50,17 @@
         width="25px"
     />WalletConnect</b-button
     >
+  </hf-pop-up>
+  <hf-pop-up
+  id="modal-2"
+  Header="Claim Reward">
+  <b-button class="mr-4" variant="success" @click="claimReward"
+      >   <img
+                  src="../assets/premium-badge.png"
+                  height="25px"
+                  width="25px"                  
+                />Claim Reward</b-button
+    >    
   </hf-pop-up>
   </div>
 </template>
@@ -73,6 +85,8 @@ export default {
   },
   data() {
     return { 
+      filteredObject:null,
+        chainId:0,
         projectId:"",              
         newRoot:"",       
         ipfsHash:"",
@@ -86,7 +100,7 @@ export default {
   },
   methods: {
     selectWallet(){
-       this.$root.$emit('modal-show');
+       this.$root.$emit('bv::show::modal','modal-1');
     },
     async metamaskSelected() {
       this.isMetamaskSelected = true
@@ -107,8 +121,6 @@ export default {
       this.toast('wallet disconnected','success')     
     },
     async onSubmit() {
-      console.log(this.accounts);
-      this.$root.$emit('modal-close');
       if(this.projectId===""){
         return this.toast('Enter Airdrop ID','error')
       }      
@@ -122,60 +134,62 @@ export default {
       const filteredObject = data.find((x)=>{
         return x._id === this.projectId
       })
-      console.log(filteredObject)
-      console.log(filteredObject.treeIndex)
-      console.log(filteredObject.additionalData.chainId)
-      console.log(filteredObject.inputData.hash)
-      console.log(filteredObject.version)
+      this.filteredObject = { ...filteredObject}
+      console.log(this.filteredObject)
+      console.log(this.filteredObject.treeIndex)
+      console.log(this.filteredObject.additionalData.chainId)
+      this.chainId = filteredObject.additionalData.chainId
+      console.log(this.chainId)
+      console.log(this.filteredObject.inputData.hash)
+      console.log(this.filteredObject.version)
       let web3;
       console.log('MM',this.isMetamaskSelected)
       console.log('WC',this.walletConnectSelected)
       if(this.isMetamaskSelected === true && this.walletConnectSelected === false){
         console.log('in MM')
-        web3 = await loadweb3(filteredObject.additionalData.chainId);
+        web3 = await loadweb3(this.chainId);
       }else if(this.isMetamaskSelected === false && this.walletConnectSelected === true){
         console.log('in WC')
-         web3 = await connectWalletConnect(filteredObject.additionalData.chainId)
+         web3 = await connectWalletConnect(this.chainId)
       }
-      // const web3 = await loadweb3();
-      // await provider.enable();
-      // const web3 = new Web3(provider);
-      
-     
+      console.log(web3)
       this.accounts = await web3.eth.getAccounts();
       console.log(this.accounts)
+      this.$root.$emit('bv::hide::modal','modal-1');
+      if(this.accounts.length>=0)
+      this.$root.$emit('bv::show::modal','modal-2');
       // const signature = await web3.eth.personal.sign(
       // "Sign here to proceed transaction",
       // this.accounts[0]
       // );
       // console.log(signature);
-      const contract = new web3.eth.Contract(abi, address);
-      const [tree, withdrawn] = await Promise.all([
-        contract.methods.merkleTrees(filteredObject.treeIndex-1).call(),
-        contract.methods.getWithdrawn(filteredObject.treeIndex, filteredObject.inputData.hash).call()
-      ])
-      console.log(JSON.stringify(tree))
-      console.log(tree, withdrawn) 
-      if(withdrawn === true) {
-        return this.toast('reward already claimed','error')
-      }   
-      const getProofFromApi = await this.getProof(this.projectId,this.walletAddress)
-      console.log(getProofFromApi)
-      const amountInWei =  utils.toWei(filteredObject.inputData.data.value, 'wei').toString();
-      console.log(amountInWei)
-      const withDrawToken = await contract.methods.withdraw(
-        filteredObject.treeIndex-1,
-        this.walletAddress,
-        amountInWei,
-        getProofFromApi
-      )
-      .send({from:this.accounts[0],
-      maxPriorityFeePerGas: null,
-      maxFeePerGas: null})
-      console.log(withDrawToken)
-      if(withDrawToken.status === true){
-        return this.toast( "Reward claimed successfully! check your wallet","success")
-      }
+      // const contract = new web3.eth.Contract(abi, address);
+      // const [tree, withdrawn] = await Promise.all([
+      //   contract.methods.merkleTrees(filteredObject.treeIndex-1).call(),
+      //   contract.methods.getWithdrawn(filteredObject.treeIndex, filteredObject.inputData.hash).call()
+      // ])
+      // console.log(JSON.stringify(tree))
+      // console.log(tree, withdrawn) 
+      // if(withdrawn === true) {
+      //   return this.toast('reward already claimed','error')
+      // }   
+      // const getProofFromApi = await this.getProof(this.projectId,this.walletAddress)
+      // console.log(getProofFromApi)
+      // const amountInWei =  utils.toWei(filteredObject.inputData.data.value, 'wei').toString();
+      // console.log(amountInWei)
+      // const withDrawToken = await contract.methods.withdraw(
+      //   filteredObject.treeIndex-1,
+      //   this.walletAddress,
+      //   amountInWei,
+      //   getProofFromApi
+      // )
+      // .send({from:this.accounts[0],
+      // maxPriorityFeePerGas: null,
+      // maxFeePerGas: null})
+      // console.log(withDrawToken)
+      // if(withDrawToken.status === true){
+      //   return this.toast( "Reward claimed successfully! check your wallet","success")
+      // }
     }catch(e) {
       console.log(e)
       this.toast(e,'error')
@@ -191,6 +205,43 @@ export default {
     //   });
       
     }},
+   async claimReward() {    
+    try{
+    const web3 = await connectWalletConnect(this.chainId)
+    const contract = new web3.eth.Contract(abi, address);
+      const [tree, withdrawn] = await Promise.all([
+        contract.methods.merkleTrees(this.filteredObject.treeIndex-1).call(),
+        contract.methods.getWithdrawn(this.filteredObject.treeIndex, this.filteredObject.inputData.hash).call()
+      ])
+      console.log(JSON.stringify(tree))
+      console.log(tree, withdrawn) 
+      if(withdrawn === true) {
+        return this.toast('reward already claimed','error')
+      }   
+      const getProofFromApi = await this.getProof(this.projectId,this.walletAddress)
+      console.log(getProofFromApi)
+      const amountInWei =  utils.toWei(this.filteredObject.inputData.data.value, 'wei').toString();
+      console.log(amountInWei)
+      const withDrawToken = await contract.methods.withdraw(
+        this.filteredObject.treeIndex-1,
+        this.walletAddress,
+        amountInWei,
+        getProofFromApi
+      )
+      .send({from:this.accounts[0],
+      maxPriorityFeePerGas: null,
+      maxFeePerGas: null})
+      console.log(withDrawToken)
+      if(withDrawToken.status === true){
+        return this.toast( "Reward claimed successfully! check your wallet","success")
+      }
+    }
+    catch(e){
+      this.toast(e,'error')
+    }finally{
+      this.$root.$emit('bv::hide::modal','modal-2');
+    }
+   },
     async getProof(projectId,walletAddress) {
       const proof = await axios.get(`https://bank.influencebackend.xyz/proof/${projectId}/${walletAddress}`)
       return proof?.data?.merkleProof
