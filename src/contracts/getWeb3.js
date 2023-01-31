@@ -6,7 +6,8 @@ async function loadWeb3(inDecimal)  {
     if(window.ethereum){      
      const chain = Web3.utils.toHex(inDecimal);     
       window.web3 = new Web3(window.ethereum);
-      const chainIdd = await window.ethereum.request({ method: "eth_chainId" });      
+      const chainIdd = await window.ethereum.request({ method: "eth_chainId" });  
+      console.log(chainIdd)    
       if(chainIdd !== chain){
       try {
        const res = await window.ethereum.request({

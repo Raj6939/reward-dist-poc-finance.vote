@@ -13,7 +13,8 @@ async function connectWalletConnect(selectedChainId) {
 
     const web3Provider = new Web3(provider);
 
-    const chainId = await provider.request({ method: "eth_chainId" });
+    let chainId = await provider.request({ method: "eth_chainId" });
+    chainId = Web3.utils.toHex(chainId);
     console.log(chainId);
     if (chainId !== chain) {
         console.log(chain)
