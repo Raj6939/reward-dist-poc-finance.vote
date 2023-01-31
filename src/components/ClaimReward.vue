@@ -168,13 +168,17 @@ export default {
         this.walletAddress,
         amountInWei,
         getProofFromApi
-      ).send({from:this.accounts[0]})
+      )
+      .send({from:this.accounts[0],
+      maxPriorityFeePerGas: null,
+      maxFeePerGas: null})
       console.log(withDrawToken)
       if(withDrawToken.status === true){
         return this.toast( "Reward claimed successfully! check your wallet","success")
       }
     }catch(e) {
       console.log(e)
+      this.toast(e,'error')
       // if(e === "User closed modal")
       // {
         // this.$router.go(0)
