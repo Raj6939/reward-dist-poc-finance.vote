@@ -85,6 +85,7 @@ export default {
   },
   data() {
     return { 
+      web3:null,
       filteredObject:null,
         chainId:0,
         projectId:"",              
@@ -141,19 +142,18 @@ export default {
       this.chainId = filteredObject.additionalData.chainId
       console.log(this.chainId)
       console.log(this.filteredObject.inputData.hash)
-      console.log(this.filteredObject.version)
-      let web3;
+      console.log(this.filteredObject.version)      
       console.log('MM',this.isMetamaskSelected)
       console.log('WC',this.walletConnectSelected)
       if(this.isMetamaskSelected === true && this.walletConnectSelected === false){
         console.log('in MM')
-        web3 = await loadweb3(this.chainId);
+        this.web3 = await loadweb3(this.chainId);
       }else if(this.isMetamaskSelected === false && this.walletConnectSelected === true){
         console.log('in WC')
-         web3 = await connectWalletConnect(this.chainId)
+         this.web3 = await connectWalletConnect(this.chainId)
       }
-      console.log(web3)
-      this.accounts = await web3.eth.getAccounts();
+      console.log(this.web3)
+      this.accounts = await this.web3.eth.getAccounts();
       console.log(this.accounts)
       this.$root.$emit('bv::hide::modal','modal-1');
       if(this.accounts.length>=0)
@@ -207,8 +207,8 @@ export default {
     }},
    async claimReward() {    
     try{
-    const web3 = await connectWalletConnect(this.chainId)
-    const contract = new web3.eth.Contract(abi, address);
+    // const web3 = await connectWalletConnect(this.chainId)
+    const contract = new this.web3.eth.Contract(abi, address);
       const [tree, withdrawn] = await Promise.all([
         contract.methods.merkleTrees(this.filteredObject.treeIndex-1).call(),
         contract.methods.getWithdrawn(this.filteredObject.treeIndex, this.filteredObject.inputData.hash).call()
