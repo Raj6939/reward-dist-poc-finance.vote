@@ -144,11 +144,11 @@ export default {
      
       this.accounts = await web3.eth.getAccounts();
       console.log(this.accounts)
-      const signature = await web3.eth.personal.sign(
-      "Sign here to proceed transaction",
-      this.accounts[0]
-      );
-      console.log(signature);
+      // const signature = await web3.eth.personal.sign(
+      // "Sign here to proceed transaction",
+      // this.accounts[0]
+      // );
+      // console.log(signature);
       const contract = new web3.eth.Contract(abi, address);
       const [tree, withdrawn] = await Promise.all([
         contract.methods.merkleTrees(filteredObject.treeIndex-1).call(),
