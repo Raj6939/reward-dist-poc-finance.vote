@@ -92,12 +92,7 @@ async function connectWalletConnect(selectedChainId) {
       }
     }
     let accounts = await web3Provider.eth.getAccounts();
-    console.log(accounts);
-    const signature = await web3Provider.eth.personal.sign(
-      "Sign here to proceed transaction",
-      accounts[0]
-    );
-    console.log(signature);
+    console.log(accounts);    
 
     provider.on("disconnect", (code, reason) => {
       console.log(code, reason);
